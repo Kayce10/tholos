@@ -499,10 +499,10 @@ With your chosen parameters:
    where half the third parties side with each party.
 3. Against-side weight: `base_bond x (1 + N_voters / 2)`.
 4. Required threshold: strictly more than `W / 2`. The contract uses the
-   comparison `side_weight > W - side_weight` (equivalently `2 x side_weight > W`),
-   which avoids doubling overflow and handles both even and odd `W` correctly.
-   For an integer `W`, this means against-side weight must be at least
-   `floor(W / 2) + 1`.
+   comparison `side_weight > W - side_weight` rather than `side_weight > W / 2`:
+   integer division rounds down, which would wrongly pass a side sitting exactly
+   at the boundary on an odd `W`. For an integer `W`, this means against-side
+   weight must be at least `floor(W / 2) + 1`.
 
 If `N_voters` is small (e.g., 1), then `W = 3 x base_bond`, against-side weight
 is `1.5 x base_bond`, and the required threshold is `floor(3B / 2) + 1`; with
