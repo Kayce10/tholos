@@ -6,7 +6,6 @@
     - [Resolver Self-Rotation Design](ROTATION_DESIGN.md)
 - [Protocol v2 Resolution Proposal](V2_RESOLUTION.md)
     - [V2 Claim Identifier and Evidence Convention](V2_CLAIM_IDENTIFIER.md)
-    - [V2 Bond Sizing and Window Analysis](V2_BOND_SIZING.md)
 - [Contract Reference](CONTRACT.md)
     - [Contract Reference (v2)](CONTRACT_V2.md)
 - [Deployment & Operations](DEPLOYMENT.md)
