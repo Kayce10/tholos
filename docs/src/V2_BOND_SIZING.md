@@ -240,18 +240,22 @@ irrelevant.
 ### Self-hedging and the cost illusion
 
 A coalition that controls both the asserter role *and* a whale-sized registration
-deposit can route the asserter's bond to the winning fixed side regardless of
-outcome. If the coalition has asserter position `B` (agreeing) plus registration
-`R_w > W / 2` (also agreeing), it controls majority at total cost `B + R_w`. If
-the honest side wins instead, the coalition forfeits `R_w` but recovers `B`
-through the asserter's principal. The coalition's *net exposure* is `R_w`, not
-`B + R_w`.
+deposit can attempt to control both the assertion and the majority vote. If the
+coalition has asserter position `B` (agreeing) plus registration `R_w > W / 2`
+(also agreeing), it controls majority at total cost `B + R_w`. If the honest
+side wins instead, the `StrictMajorityAgainst` settlement rule pays only
+positions where `agrees_with_outcome == Some(false)`; the asserter's
+`Fixed(true)` position has `agrees_with_outcome == Some(true)` and is therefore
+forfeited along with `R_w`. The coalition's real net exposure when it loses is
+`B + R_w`, not `R_w` alone. There is no self-hedging benefit: the asserter bond
+does not reduce the coalition's downside.
 
-A deployer should therefore think of capture cost as **`R_w` alone** (the
-capital that is genuinely at risk), not the notional `c x W`. A `max_position`
-limit forces the whale to assemble multiple addresses, but linear weight prevents
-splitting from amplifying its combined vote; it only complicates logistics and
-raises gas costs slightly.
+A deployer should therefore think of capture cost as **`B + R_w`** in both the
+success and the failure case. The minimum capital at risk for a capture attempt
+is `B + R_w`, where `R_w > 2B + R_h`. A `max_position` limit forces the whale
+to assemble multiple addresses, but linear weight prevents splitting from
+amplifying its combined vote; it only complicates logistics and raises capital
+requirements slightly.
 
 ---
 
@@ -510,7 +514,15 @@ which does not satisfy `side_weight > W - side_weight`.
 
 **Rule of thumb**: budget `N_voters >= 3` realistically achievable third-party
 registrants for a deployment that intends to correct false assertions without
-relying on a dominant single voter.
+relying on a dominant single voter. Note that `N_voters >= 3` is a floor for a
+healthy electorate, not a sufficient condition for correction on its own. The
+model above assumes a symmetric split of revealed weight, under which the
+against-side weight equals exactly `W / 2` regardless of `N_voters`: correction
+always requires an honest-side *imbalance* (more revealed weight against than
+for), not just a larger headcount. A deployment with three third-party voters
+all revealing on the honest side will correct a false assertion; a deployment
+where half reveal for the asserted outcome will not, regardless of how many
+participants registered.
 
 ### Whale-capture check
 
