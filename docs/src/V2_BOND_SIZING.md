@@ -6,8 +6,8 @@ lengths, anti-sniping headroom, and the per-address position cap. The models are
 not a substitute for live telemetry, but they give deployers a repeatable way to
 pick initial values and revisit them as usage changes.
 
-For the v1 bond-sizing framework — spam floors, dispute floors, and finalize-reward
-constraints that still apply to `base_bond` — see [BOND_SIZING.md](BOND_SIZING.md).
+For the v1 bond-sizing framework (spam floors, dispute floors, and finalize-reward
+constraints that still apply to `base_bond`) see [BOND_SIZING.md](BOND_SIZING.md).
 This document extends that analysis with the three problems that are new in v2.
 
 ## Background: v2 outcome rule
@@ -47,9 +47,9 @@ Formally, let:
 - `W` = frozen eligible total
 - `F` = revealed weight agreeing with the asserted outcome
 - `A` = revealed weight against
-- `N` = non-revealed weight (`N = W − F − A`)
+- `N` = non-revealed weight (`N = W - F - A`)
 
-The assertion stands whenever `A ≤ W / 2`. Because `N > 0` inflates `W`, even a
+The assertion stands whenever `A <= W / 2`. Because `N > 0` inflates `W`, even a
 large `A` may not cross the threshold.
 
 ### Default-frequency formula
@@ -58,7 +58,7 @@ For a dispute where the true outcome is *against* the asserted side, the asserti
 nevertheless survives if:
 
 ```text
-A / W ≤ 0.5
+A / W <= 0.5
 ```
 
 Define `t = (F + A) / W` as the **reveal turnout rate** (fraction of eligible
@@ -66,26 +66,26 @@ weight that actually reveals). For a symmetric dispute where roughly half the
 revealed weight sides with each party:
 
 ```text
-A ≈ t × W / 2
+A ~= t x W / 2
 ```
 
 Then the assertion survives if:
 
 ```text
-t × W / 2 ≤ W / 2  →  t ≤ 1.0
+t x W / 2 <= W / 2  ->  t <= 1.0
 ```
 
-That is always true — turnout alone cannot prevent a timeout. The meaningful
-question is: what reveal turnout `t` is needed for the *against* side to reach a
+That is always true: turnout alone cannot prevent a timeout. The meaningful
+question is what reveal turnout `t` is needed for the *against* side to reach a
 strict majority when the split of revealed weight is skewed toward the losing
-(assertion-supporting) side?
+(assertion-supporting) side.
 
 Let `s` be the fraction of revealed weight on the *against* side (honesty
 share). A strict-majority against-the-assertion requires:
 
 ```text
-s × t > 0.5
-  →  t > 0.5 / s
+s x t > 0.5
+  ->  t > 0.5 / s
 ```
 
 | Against-side honesty share `s` | Minimum turnout `t` for correction |
@@ -98,8 +98,8 @@ s × t > 0.5
 
 **Key finding**: when honest disagreers are 66% of revealers, three-quarters of
 all eligible weight must reveal for correction. When they are 51%, virtually the
-entire pool must reveal. Any non-reveal — absent staking, lost keys, sleeping
-coordinators — benefits the asserted outcome.
+entire pool must reveal. Any non-reveal (absent staking, lost keys, sleeping
+coordinators) benefits the asserted outcome.
 
 ### The issue-body example
 
@@ -110,7 +110,7 @@ The V2 design discussion raised this scenario explicitly:
 Here `W = 100`, `F = 1`, `A = 49`, `N = 50`. The against-side has 49 units,
 but the threshold is `W / 2 = 50`. The assertion stands because `49 < 50`.
 
-More generally, any time `N ≥ 1` unit makes the strict-majority threshold
+More generally, any time `N >= 1` unit makes the strict-majority threshold
 unattainable for the against-side, the assertion stands regardless of the
 revealed margin. This is the intended behavior: the optimistic default favors the
 status quo and treats abstention as implicit delegation to it.
@@ -121,19 +121,19 @@ The default-frequency risk is not eliminated by longer windows; it is controlled
 by ensuring that enough bonded capital can *reach* the reveal phase. The levers
 are:
 
-1. **`registration_duration_secs`** — a longer window lets more third-party
+1. **`registration_duration_secs`**: a longer window lets more third-party
    positions arrive, growing `W` with counter-stake rather than diluting a small
    `W` with silence.
-2. **`reveal_duration_secs`** — a longer reveal window lets coordinators organize
+2. **`reveal_duration_secs`**: a longer reveal window lets coordinators organize
    reveals. Too short a window and registered positions may silently miss it.
-3. **`min_resolution_bond` = `base_bond`** — a higher floor means fewer positions
+3. **`min_resolution_bond` = `base_bond`**: a higher floor means fewer positions
    but each one is more economically committed. It does not by itself prevent
    default.
 
 The practical guard against frequent timeout-by-silence is ensuring that the
 *disputer* plus a realistic cohort of third-party registrants can represent a
-strict majority of `W`. With only two equal fixed positions (`2 × base_bond`) and
-no third parties, `W = 2 × base_bond`, `A = base_bond`, and `A / W = 0.5` — the
+strict majority of `W`. With only two equal fixed positions (`2 x base_bond`) and
+no third parties, `W = 2 x base_bond`, `A = base_bond`, and `A / W = 0.5`; the
 disputer's weight never exceeds half. A lone dispute *always* times out unless at
 least one additional third party registers on the against side. See Part 3 for the
 window-length tradeoffs that govern third-party participation.
@@ -164,9 +164,9 @@ The whale controls strict majority when:
 
 ```text
 R_w > W / 2
-  →  R_w > (2B + R_w + R_h) / 2
-  →  2R_w > 2B + R_w + R_h
-  →  R_w > 2B + R_h
+  ->  R_w > (2B + R_w + R_h) / 2
+  ->  2R_w > 2B + R_w + R_h
+  ->  R_w > 2B + R_h
 ```
 
 ### Concentration threshold
@@ -187,19 +187,19 @@ Minimum R_w for capture = 2B + R_h + 1 unit
 With zero counter-stake (`R_h = 0`):
 
 ```text
-R_w > 2B  →  three times the base bond secures majority
+R_w > 2B  ->  just over twice the base bond is enough to capture majority
 ```
 
 With counter-stake equal to the base bond (`R_h = B`):
 
 ```text
-R_w > 3B  →  four times the base bond required
+R_w > 3B  ->  just over three times the base bond required
 ```
 
 With counter-stake equal to five times the base bond (`R_h = 5B`):
 
 ```text
-R_w > 7B  →  eight times the base bond required
+R_w > 7B  ->  just over seven times the base bond required
 ```
 
 Each additional unit of honest counter-stake raises the whale's capture cost
@@ -209,7 +209,7 @@ defense.
 ### Role of `max_position`
 
 Setting `max_position < max_total_weight` prevents a single address from
-contributing all of `W`. If `max_position = p × base_bond`:
+contributing all of `W`. If `max_position = p x base_bond`:
 
 ```text
 Maximum single-address weight share = p / (2 + p) when R_h = 0
@@ -217,20 +217,20 @@ Maximum single-address weight share = p / (2 + p) when R_h = 0
 
 | `max_position` (multiples of `base_bond`) | Max share of W (no counter-stake) |
 | ----------------------------------------- | --------------------------------- |
-| 1× (equal to each fixed party)            | 33%                               |
-| 2×                                        | 50% exactly — cannot reach majority |
-| 3×                                        | 60%                               |
-| 5×                                        | 71%                               |
-| 10×                                       | 83%                               |
-| ∞ (= `max_total_weight`)                  | 100%                              |
+| 1x (equal to each fixed party)            | 33%                               |
+| 2x                                        | 50% exactly; cannot reach majority |
+| 3x                                        | 60%                               |
+| 5x                                        | 71%                               |
+| 10x                                       | 83%                               |
+| unlimited (= `max_total_weight`)          | 100%                              |
 
-**Key finding**: setting `max_position = 2 × base_bond` means a single address
+**Key finding**: setting `max_position = 2 x base_bond` means a single address
 with no counter-stake can only reach exactly 50%, which is not a strict majority.
-Setting it at `3 × base_bond` allows capture with no counter-stake. This is the
+Setting it at `3 x base_bond` allows capture with no counter-stake. This is the
 most impactful single-parameter defense: even if no third party registers,
-`max_position ≤ 2 × base_bond` prevents a whale from reaching majority on its own.
+`max_position <= 2 x base_bond` prevents a whale from reaching majority on its own.
 
-However, `max_position ≤ 2 × base_bond` also caps legitimate counter-stake, which
+However, `max_position <= 2 x base_bond` also caps legitimate counter-stake, which
 means a single large honest voter cannot provide the full majority on its own
 either. Whether that is acceptable depends on the deployment's expected electorate
 size. For a deployment expecting 3+ participants in a contested dispute, tight
@@ -247,8 +247,8 @@ the honest side wins instead, the coalition forfeits `R_w` but recovers `B`
 through the asserter's principal. The coalition's *net exposure* is `R_w`, not
 `B + R_w`.
 
-A deployer should therefore think of capture cost as **`R_w` alone** — the
-capital that is genuinely at risk — not the notional `c × W`. A `max_position`
+A deployer should therefore think of capture cost as **`R_w` alone** (the
+capital that is genuinely at risk), not the notional `c x W`. A `max_position`
 limit forces the whale to assemble multiple addresses, but linear weight prevents
 splitting from amplifying its combined vote; it only complicates logistics and
 raises gas costs slightly.
@@ -265,9 +265,9 @@ raises gas costs slightly.
 | `T_rev` | `reveal_duration_secs` |
 | `T_hard` | `anti_snipe_hard_max_secs` |
 | `T_ext` | `anti_snipe_extension_secs` |
-| `τ_react` | Typical time for a new voter to notice the dispute and decide to register |
-| `τ_coord` | Time needed to coordinate reveals off-chain (signal, salt collection) |
-| `τ_atk` | Time an attacker needs to move capital into a sniped deposit |
+| `t_react` | Typical time for a new voter to notice the dispute and decide to register |
+| `t_coord` | Time needed to coordinate reveals off-chain (signal, salt collection) |
+| `t_atk` | Time an attacker needs to move capital into a sniped deposit |
 
 ### Registration window: participation vs. capture speed
 
@@ -282,14 +282,14 @@ the last moment.
 The tradeoff:
 
 ```
-Participation benefit peaks when:  T_reg ≥ τ_react (typical voter latency)
+Participation benefit peaks when:  T_reg >= t_react (typical voter latency)
 Capture risk is manageable when:   T_reg < time attacker needs to move capital
 ```
 
 For most deployments these are the same order of magnitude (minutes to hours),
 which is why anti-sniping exists. The practical guidance:
 
-- Use `T_reg ≥ τ_react` to capture genuine participation.
+- Use `T_reg >= t_react` to capture genuine participation.
 - Use `T_ext` (anti-snipe extension) to deter last-second position injections
   that arrive after honest voters cannot respond.
 - Cap extensions at `T_hard` to prevent an adversary from grieving registration
@@ -302,13 +302,13 @@ The soft deadline extends by `T_ext` when a qualifying deposit arrives within
 extension fires repeatedly if deposits keep arriving near the moving edge.
 
 ```text
-Maximum extensions before hard cap:  floor((T_hard − T_reg) / T_ext)
+Maximum extensions before hard cap:  floor((T_hard - T_reg) / T_ext)
 ```
 
 For example, `T_reg = 3600`, `T_ext = 300`, `T_hard = 7200`:
 
 ```text
-Maximum extensions: floor((7200 − 3600) / 300) = 12 extensions of 5 minutes each
+Maximum extensions: floor((7200 - 3600) / 300) = 12 extensions of 5 minutes each
 ```
 
 An attacker who tries to snipe must arrive at least `T_ext` seconds before the
@@ -319,7 +319,7 @@ honest counter-stake calculate the correct response.
 Setting `T_ext` too small (e.g., 1 second) makes sniping easy; a last-second
 deposit arrives and the extension is trivially short. Setting `T_ext` too large
 (equal to `T_reg`) means a single late deposit nearly doubles the registration
-window, which may itself be a griefing vector. A range of 5%–15% of `T_reg` is
+window, which may itself be a griefing vector. A range of 5%-15% of `T_reg` is
 generally appropriate.
 
 ### Reveal window: participation vs. delay
@@ -334,19 +334,19 @@ However, every second of `T_rev` adds directly to the total time from `dispute`
 to `Resolved`. The total dispute lifecycle is approximately:
 
 ```text
-Total dispute time ≈ T_hard + T_rev
+Total dispute time ~= T_hard + T_rev
 ```
 
 The tradeoff is:
 
 | `T_rev` choice | Effect on default frequency | Effect on finality latency |
 | -------------- | --------------------------- | -------------------------- |
-| Very short (< `τ_coord`) | High — reveal coordination may fail | Low |
-| Moderate (≥ `τ_coord`)   | Low — coordinators have time to act | Moderate |
-| Very long                 | Negligible marginal gain after saturation | High |
+| Very short (< `t_coord`) | High: reveal coordination may fail | Low |
+| Moderate (>= `t_coord`)  | Low: coordinators have time to act | Moderate |
+| Very long                | Negligible marginal gain after saturation | High |
 
-Recommended: set `T_rev ≥ τ_coord` with at least a 2× safety margin. For most
-disputes, `τ_coord` is dominated by off-chain response time (monitoring, human
+Recommended: set `T_rev >= t_coord` with at least a 2x safety margin. For most
+disputes, `t_coord` is dominated by off-chain response time (monitoring, human
 decision, client submission), not raw transaction throughput. 6 hours to 24 hours
 is typical; sub-hour windows risk high default rates unless the deployment
 guarantees automated reveal infrastructure.
@@ -355,11 +355,11 @@ guarantees automated reveal infrastructure.
 
 | Scenario | Longer window helps | Shorter window helps |
 | -------- | ------------------- | -------------------- |
-| High default frequency | `T_rev` (more reveal time) | — |
-| Low third-party participation | `T_reg` (more registration time) | — |
-| Last-second sniping | `T_ext`, `T_hard` | — |
-| Slow resolution / time-sensitive outcomes | — | `T_reg`, `T_rev` |
-| Griefing via repeated extensions | — | `T_hard` (set conservatively) |
+| High default frequency | `T_rev` (more reveal time) | n/a |
+| Low third-party participation | `T_reg` (more registration time) | n/a |
+| Last-second sniping | `T_ext`, `T_hard` | n/a |
+| Slow resolution / time-sensitive outcomes | n/a | `T_reg`, `T_rev` |
+| Griefing via repeated extensions | n/a | `T_hard` (set conservatively) |
 
 ---
 
@@ -377,8 +377,8 @@ v2 inputs are:
 
 | Symbol | Meaning |
 | --- | --- |
-| `τ_react` | Typical time for an interested third party to notice a dispute and register, in seconds. |
-| `τ_coord` | Time needed for off-chain reveal coordination — collecting salts, computing commitments, submitting transactions. |
+| `t_react` | Typical time for an interested third party to notice a dispute and register, in seconds. |
+| `t_coord` | Time needed for off-chain reveal coordination: collecting salts, computing commitments, submitting transactions. |
 | `N_voters` | Expected number of distinct third-party registrants in a contested dispute. |
 | `max_honest_stake` | Expected total third-party honest counter-stake in a typical dispute, in token units. |
 | `V_dispute` | Economic value that could be captured by falsely resolving one assertion. |
@@ -391,22 +391,22 @@ The v2 minimum bond satisfies all v1 constraints plus one additional check:
 base_bond >= max(
   R_case / max(1, K_spam),
   R_case / max(1, K_dispute),
-  target_attacker_loss − min(C_assert, C_dispute),
-  min_finalizer_reward × 10_000 / max(1, reward_bps),
-  V_dispute / capture_cost_multiplier   ← new in v2
+  target_attacker_loss - min(C_assert, C_dispute),
+  min_finalizer_reward x 10_000 / max(1, reward_bps),
+  V_dispute / capture_cost_multiplier   <- new in v2
 )
 ```
 
 `capture_cost_multiplier` is the minimum multiple of `base_bond` an attacker must
 stake to reach majority with no counter-stake. From Part 2, with zero
-counter-stake this is `2B + 1`, meaning `capture_cost_multiplier ≈ 2`. With
+counter-stake this is `2B + 1`, meaning `capture_cost_multiplier ~= 2`. With
 realistic counter-stake the multiplier grows. Use `2` as the conservative
 (zero-counter-stake) floor.
 
 Affordability cap (unchanged from v1):
 
 ```text
-base_bond <= V_min × max_acceptable_bond_share
+base_bond <= V_min x max_acceptable_bond_share
 ```
 
 ### `max_position` guidance
@@ -414,12 +414,12 @@ base_bond <= V_min × max_acceptable_bond_share
 Set `max_position` as a multiple of `base_bond`:
 
 ```text
-max_position = k × base_bond,  k ∈ [2, 20]
+max_position = k x base_bond,  k in [2, 20]
 ```
 
 - `k = 2`: a single address cannot reach majority alone (even with no counter-stake).
   Maximally whale-resistant but restricts legitimate large-stake participants.
-- `k = 5–10`: a single address needs at least 5–10× honest counter-stake before
+- `k = 5-10`: a single address needs at least 5-10x honest counter-stake before
   becoming a threat. Suitable for most deployments.
 - `k = max_total_weight / base_bond`: no per-position constraint.
   Use only in private / trusted deployments.
@@ -427,22 +427,22 @@ max_position = k × base_bond,  k ∈ [2, 20]
 ### `max_total_weight` guidance
 
 ```text
-max_total_weight = m × base_bond,  m ≥ max(10, N_voters × k + 2)
+max_total_weight = m x base_bond,  m >= max(10, N_voters x k + 2)
 ```
 
 Set `m` large enough to accommodate the expected number of participants at full
 `max_position` each, plus the two fixed parties. The contract arithmetic is
-safe as long as `max_total_weight ≤ MAX_SETTLEMENT_TOTAL_WEIGHT`; the practical
-guidance is to give yourself at least 5–10× headroom over the expected populated
+safe as long as `max_total_weight <= MAX_SETTLEMENT_TOTAL_WEIGHT`; the practical
+guidance is to give yourself at least 5-10x headroom over the expected populated
 `W` so legitimate counter-stake is never blocked.
 
 ### Profile table
 
 | Profile | `base_bond` | `T_reg` | `T_ext` | `T_hard` | `T_rev` | `max_position` | `max_total_weight` | Use when |
 | ------- | ----------- | ------- | ------- | -------- | ------- | -------------- | ------------------ | -------- |
-| Private beta | 1×–2× spam floor | 1–4 h | 5 min | 2× `T_reg` | 4–12 h | 10× `base_bond` | 50× `base_bond` | Known users, coordinated reveals, low bot pressure. |
-| Public testnet / low value | 2×–5× larger spam floor | 4–12 h | 10 min | 3× `T_reg` | 12–24 h | 5× `base_bond` | 100× `base_bond` | Open participation, moderate value, expect uncoordinated voters. |
-| Higher-value mainnet candidate | 5×+ spam floor, within 5%–20% of `V_min` | 12–24 h | 15–30 min | 2×–4× `T_reg` | 24–48 h | 3× `base_bond` | 200× `base_bond` | Meaningful value, monitored reveals, audited deployment. |
+| Private beta | 1x-2x spam floor | 1-4 h | 5 min | 2x `T_reg` | 4-12 h | 10x `base_bond` | 50x `base_bond` | Known users, coordinated reveals, low bot pressure. |
+| Public testnet / low value | 2x-5x larger spam floor | 4-12 h | 10 min | 3x `T_reg` | 12-24 h | 5x `base_bond` | 100x `base_bond` | Open participation, moderate value, expect uncoordinated voters. |
+| Higher-value mainnet candidate | 5x+ spam floor, within 5%-20% of `V_min` | 12-24 h | 15-30 min | 2x-4x `T_reg` | 24-48 h | 3x `base_bond` | 200x `base_bond` | Meaningful value, monitored reveals, audited deployment. |
 
 ### Narrative guidance per profile
 
@@ -450,10 +450,10 @@ guidance is to give yourself at least 5–10× headroom over the expected popula
 
 The electorate is known. Reveals can be coordinated quickly. Default frequency
 is low because coordinators will not silently miss the reveal window. The main
-risk is a single insider dominating a dispute, so `max_position = 10 × base_bond`
+risk is a single insider dominating a dispute, so `max_position = 10 x base_bond`
 is an informational bound rather than a security control (all participants are
-trusted). A 1–4 hour registration window is long enough for beta testers to
-notice a dispute; a 4–12 hour reveal window is long enough for manual
+trusted). A 1-4 hour registration window is long enough for beta testers to
+notice a dispute; a 4-12 hour reveal window is long enough for manual
 coordination. Set `anti_snipe_extension_secs` conservatively at 5 minutes to
 prevent last-second test disputes from stalling registration.
 
@@ -463,22 +463,22 @@ The electorate is open but economic stakes are low. Default frequency is a
 secondary concern because a wrong resolution has limited financial impact.
 The primary concern is UX: long enough windows so new users can register and
 reveal without requiring dedicated keeper infrastructure, short enough that
-resolutions complete within a day or two. A 4–12 hour registration window with
-10-minute anti-snipe extensions and a 12–24 hour reveal window is a reasonable
-starting point. Set `max_position = 5 × base_bond` to require at least 5 units
+resolutions complete within a day or two. A 4-12 hour registration window with
+10-minute anti-snipe extensions and a 12-24 hour reveal window is a reasonable
+starting point. Set `max_position = 5 x base_bond` to require at least 5 units
 of honest counter-stake before a single whale can threaten majority.
 
 #### Higher-value mainnet candidate
 
-Every parameter is tightened toward security. Registration is 12–24 hours to
-allow global participation across timezones. The reveal window is 24–48 hours
+Every parameter is tightened toward security. Registration is 12-24 hours to
+allow global participation across timezones. The reveal window is 24-48 hours
 to give coordinators a full working day to organize reveals. `max_position =
-3 × base_bond` forces a whale to recruit multiple addresses and raises logistics
-cost. The anti-snipe extension is longer (15–30 minutes) to give honest
-participants meaningful response time to a late deposit. The hard cap is 2–4×
-the base registration window to allow 4–8 meaningful extensions without
-permitting indefinite delay. The bond floor is computed at 5×+ the v1 spam/dispute
-floor, checked against `V_dispute / 2`, and capped at 5%–20% of `V_min`.
+3 x base_bond` forces a whale to recruit multiple addresses and raises logistics
+cost. The anti-snipe extension is longer (15-30 minutes) to give honest
+participants meaningful response time to a late deposit. The hard cap is 2-4x
+the base registration window to allow 4-8 meaningful extensions without
+permitting indefinite delay. The bond floor is computed at 5x+ the v1 spam/dispute
+floor, checked against `V_dispute / 2`, and capped at 5%-20% of `V_min`.
 
 ---
 
@@ -491,19 +491,24 @@ With your chosen parameters:
 
 1. Assume only the disputer (one `base_bond` against) plus `N_voters` third parties
    each posting `base_bond`.
-2. Compute `W = 2 × base_bond × (1 + N_voters / 2)` under a symmetric scenario
+2. Compute `W = 2 x base_bond x (1 + N_voters / 2)` under a symmetric scenario
    where half the third parties side with each party.
-3. Against-side weight: `base_bond × (1 + N_voters / 2)`.
-4. Required threshold: `W / 2 + 1`.
+3. Against-side weight: `base_bond x (1 + N_voters / 2)`.
+4. Required threshold: strictly more than `W / 2`. The contract uses the
+   comparison `side_weight > W - side_weight` (equivalently `2 x side_weight > W`),
+   which avoids doubling overflow and handles both even and odd `W` correctly.
+   For an integer `W`, this means against-side weight must be at least
+   `floor(W / 2) + 1`.
 
-If `N_voters` is small (e.g., 1), the against-side has `1.5 × base_bond` against
-a threshold of `1.5 × base_bond + 0.5`; correction requires exactly one more
-third-party registrant on the honest side. A deployment expecting zero third
-parties cannot deterministically correct a false assertion unless the disputer's
-lone bond can tip the balance — which it cannot at `W = 2 × base_bond` (it
-reaches exactly 50%, not strictly more than 50%).
+If `N_voters` is small (e.g., 1), then `W = 3 x base_bond`, against-side weight
+is `1.5 x base_bond`, and the required threshold is `floor(3B / 2) + 1`; with
+integer bonds, against-side needs at least `floor(3B / 2) + 1` units. For
+`base_bond = 2` this is 4 against 3, requiring one more unit on the honest side.
+A deployment expecting zero third parties cannot deterministically correct a false
+assertion: the disputer's lone bond reaches exactly `W / 2` at `W = 2 x base_bond`,
+which does not satisfy `side_weight > W - side_weight`.
 
-**Rule of thumb**: budget `N_voters ≥ 3` realistically achievable third-party
+**Rule of thumb**: budget `N_voters >= 3` realistically achievable third-party
 registrants for a deployment that intends to correct false assertions without
 relying on a dominant single voter.
 
@@ -512,18 +517,18 @@ relying on a dominant single voter.
 For your chosen `base_bond`, `max_position`, and expected `max_honest_stake`:
 
 ```text
-Minimum capture bond = 2 × base_bond + max_honest_stake + 1 unit
+Minimum capture bond = 2 x base_bond + max_honest_stake + 1 unit
 ```
 
 If `minimum capture bond > max_position`, capture is impossible for a single
-address regardless of counter-stake. If `minimum capture bond ≤ max_position`,
+address regardless of counter-stake. If `minimum capture bond <= max_position`,
 the whale risk exists and should be controlled by expecting `max_honest_stake`
 to be present in contested disputes.
 
 Worked example (higher-value mainnet candidate profile):
 
 - `base_bond = 100` units
-- `max_position = 300` units (3×)
+- `max_position = 300` units (3x)
 - Expected honest counter-stake: `200` units (two third parties at `base_bond` each)
 
 ```text
@@ -539,13 +544,13 @@ this example.
 Verify:
 
 ```text
-T_rev ≥ 2 × τ_coord              (2× safety margin on reveal coordination)
-T_reg ≥ τ_react                   (voters can notice and register)
-T_ext ≥ τ_atk / 10               (extension is nontrivial relative to attacker response time)
-T_hard ≤ T_reg + 20 × T_ext       (hard cap prevents indefinite extension griefing)
+T_rev >= 2 x t_coord   (2x safety margin on reveal coordination)
+T_reg >= t_react       (voters can notice and register)
+T_ext >= t_atk / 10   (extension is nontrivial relative to attacker response time)
+T_hard <= T_reg + 20 x T_ext  (hard cap prevents indefinite extension griefing)
 ```
 
-If `T_rev < τ_coord`, shorten the coordination process, add keeper automation, or
+If `T_rev < t_coord`, shorten the coordination process, add keeper automation, or
 increase `T_rev`. If `T_hard` would exceed your acceptable total dispute lifetime
 (`T_hard + T_rev`), tighten the anti-snipe parameters or reduce `T_ext`.
 
@@ -555,12 +560,12 @@ increase `T_rev`. If `T_hard` would exceed your acceptable total dispute lifetim
 
 Review after every testnet campaign and before mainnet launch:
 
-- Fraction of disputes that end in `OptimisticTimeout` vs. `StrictMajority`.
-  A high timeout rate with many registered positions suggests the reveal window is
+- Fraction of disputes that end in `OptimisticTimeout` vs. `StrictMajority`. A
+  high timeout rate with many registered positions suggests the reveal window is
   too short or coordination is breaking down. A high timeout rate with few or no
-  third-party registrants may indicate the registration window or bond floor is too
-  high for the expected electorate.
-- Distribution of `W` across disputes. If `W ≈ 2 × base_bond` consistently,
+  third-party registrants may indicate the registration window or bond floor is
+  too high for the expected electorate.
+- Distribution of `W` across disputes. If `W ~= 2 x base_bond` consistently,
   third-party participation is absent; revisit window lengths and bond sizing.
 - Non-reveal rate among registered third-party positions. High non-reveal rates
   inflate `N` and drive default frequency. Investigate whether `T_rev` is too
